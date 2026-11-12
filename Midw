@@ -1,0 +1,189 @@
+-- Garden Tower Defense Automation Hub
+-- UI Framework: Rayfield (standard for this look)
+
+local Rayfield = loadstring(game:HttpGet('https://sirblood.github.io/RayfieldApp/Rayfield.lua'))()
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+
+-- State Management
+local State = {
+    Match = {
+        AutoReturn = false,
+        AutoReplay = false,
+        AutoAbility = false,
+        Auto3xSpeed = false,
+        Auto2xSpeed = false,
+        AutoSkipWave = false,
+        AutoSkipCutscene = false,
+        Disable3D = false
+    },
+    Macro = {
+        Recording = false,
+        Playing = false,
+        Actions = {}
+    },
+    AntiBan = {
+        PlacementSpread = 0.3,
+        MicroTeleport = 3,
+        WalkRadius = 6,
+        AutoWalk = false
+    }
+}
+
+local Window = Rayfield:CreateWindow({
+    Name = "Garden Tower Defense | Hub v2.5.5",
+    LoadingTitle = "Loading Hub...",
+    LoadingSubtitle = "by ratman4080",
+    ConfigurationSaving = { Enabled = true, FolderName = "GTDHub", FileName = "Config" },
+    Discord = { Enabled = false },
+    KeySystem = false
+})
+
+-- == TABS ==
+local TabMatch = Window:CreateTab("Match", 4483362458)
+local TabMacro = Window:CreateTab("Macro", 4483362458)
+local TabAntiBan = Window:CreateTab("Anti Ban", 4483362458)
+
+-- == MATCH TAB ==
+TabMatch:CreateSection("Auto Features")
+
+TabMatch:CreateToggle({
+    Name = "Auto Return",
+    CurrentValue = false,
+    Flag = "AutoReturn",
+    Callback = function(Value) State.Match.AutoReturn = Value end,
+})
+
+TabMatch:CreateToggle({
+    Name = "Auto Replay",
+    CurrentValue = false,
+    Flag = "AutoReplay",
+    Callback = function(Value) State.Match.AutoReplay = Value end,
+})
+
+TabMatch:CreateToggle({
+    Name = "Auto Ability",
+    CurrentValue = false,
+    Flag = "AutoAbility",
+    Callback = function(Value) State.Match.AutoAbility = Value end,
+})
+
+TabMatch:CreateToggle({
+    Name = "Auto Skip Wave",
+    CurrentValue = false,
+    Flag = "AutoSkipWave",
+    Callback = function(Value) State.Match.AutoSkipWave = Value end,
+})
+
+TabMatch:CreateSection("Performance")
+TabMatch:CreateToggle({
+    Name = "Disable 3D Rendering",
+    CurrentValue = false,
+    Flag = "Disable3D",
+    Callback = function(Value) 
+        State.Match.Disable3D = Value
+        RunService:Set3dRenderingEnabled(not Value)
+    end,
+})
+
+-- == MACRO TAB ==
+TabMacro:CreateSection("Record / Play")
+
+TabMacro:CreateToggle({
+    Name = "Record Macro",
+    CurrentValue = false,
+    Flag = "RecordMacro",
+    Callback = function(Value) 
+        State.Macro.Recording = Value 
+        if Value then State.Macro.Actions = {} end -- Clear previous on new record
+    end,
+})
+
+TabMacro:CreateToggle({
+    Name = "Play Macro",
+    CurrentValue = false,
+    Flag = "PlayMacro",
+    Callback = function(Value) 
+        State.Macro.Playing = Value 
+        if Value then
+            task.spawn(function()
+                -- Basic macro playback loop
+                for _, action in ipairs(State.Macro.Actions) do
+                    if not State.Macro.Playing then break end
+                    -- Game specific remote fire goes here based on recorded action
+                    task.wait(action.delay)
+                end
+                State.Macro.Playing = false
+            end)
+        end
+    end,
+})
+
+-- == ANTI BAN TAB ==
+TabAntiBan:CreateSection("Movement & Randomization")
+
+TabAntiBan:CreateSlider({
+    Name = "Placement Spread",
+    Range = {0.1, 2.0},
+    Increment = 0.1,
+    Suffix = "Studs",
+    CurrentValue = 0.3,
+    Flag = "PlacementSpread",
+    Callback = function(Value) State.AntiBan.PlacementSpread = Value end,
+})
+
+TabAntiBan:CreateSlider({
+    Name = "Walk Radius",
+    Range = {1, 15},
+    Increment = 1,
+    Suffix = "Studs",
+    CurrentValue = 6,
+    Flag = "WalkRadius",
+    Callback = function(Value) State.AntiBan.WalkRadius = Value end,
+})
+
+TabAntiBan:CreateToggle({
+    Name = "Auto Walk",
+    CurrentValue = false,
+    Flag = "AutoWalk",
+    Callback = function(Value) State.AntiBan.AutoWalk = Value end,
+})
+
+-- == ENGINE LOOPS ==
+
+-- Anti-Ban Auto Walk Logic
+task.spawn(function()
+    while task.wait(3) do
+        if State.AntiBan.AutoWalk and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                local radius = State.AntiBan.WalkRadius
+                local randomX = math.random(-radius, radius)
+                local randomZ = math.random(-radius, radius)
+                local targetPos = root.Position + Vector3.new(randomX, 0, randomZ)
+                
+                LocalPlayer.Character.Humanoid:MoveTo(targetPos)
+            end
+        end
+    end
+end)
+
+-- Main Automation Loop
+RunService.Heartbeat:Connect(function()
+    if State.Match.AutoSkipWave then
+        -- Placeholder: Fire the specific remote for Garden Tower Defense wave skip
+        -- e.g., game:GetService("ReplicatedStorage").Remotes.SkipWave:FireServer()
+    end
+    
+    if State.Match.AutoAbility then
+        -- Placeholder: Iterate through placed towers and fire ability remotes
+    end
+    
+    if State.Match.AutoReturn then
+        -- Placeholder: Detect match end UI and teleport back to lobby
+    end
+end)
+
+Rayfield:LoadConfiguration()
